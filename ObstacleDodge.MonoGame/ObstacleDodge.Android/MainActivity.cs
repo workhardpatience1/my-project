@@ -19,7 +19,7 @@ namespace ObstacleDodge
         Icon = "@mipmap/appicon",
         Theme = "@style/AppTheme",
         AlwaysRetainTaskState = true,
-        LaunchMode = LaunchMode.SingleInstance,
+        LaunchMode = LaunchMode.SingleTask, // not SingleInstance: the AdMob ad activity must open in the same task
         ScreenOrientation = ScreenOrientation.SensorLandscape,
         ConfigurationChanges = ConfigChanges.Orientation | ConfigChanges.Keyboard | ConfigChanges.KeyboardHidden |
                                ConfigChanges.ScreenSize | ConfigChanges.ScreenLayout | ConfigChanges.UiMode |
