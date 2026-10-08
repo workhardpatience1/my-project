@@ -64,7 +64,24 @@ namespace ObstacleDodge
             Window.Title = "Obstacle Dodge";
         }
 
+        // If anything throws, the game stops and shows the error text instead of crashing silently.
+        string fatalError;
+
+        void Fail(string where, Exception e)
+        {
+            if (fatalError != null) return;
+            fatalError = where + ": " + e;
+            Console.WriteLine("[Fatal] " + fatalError);
+            try { platform.ReportError(fatalError); } catch { }
+        }
+
         protected override void LoadContent()
+        {
+            try { LoadContentCore(); }
+            catch (Exception e) { Fail("LoadContent", e); }
+        }
+
+        void LoadContentCore()
         {
             batch = new SpriteBatch(GraphicsDevice);
             font = BitmapFont.LoadEmbedded(GraphicsDevice);
@@ -129,6 +146,16 @@ namespace ObstacleDodge
 
         protected override void Update(GameTime gameTime)
         {
+            if (fatalError == null)
+            {
+                try { UpdateCore(gameTime); }
+                catch (Exception e) { Fail("Update", e); }
+            }
+            base.Update(gameTime);
+        }
+
+        void UpdateCore(GameTime gameTime)
+        {
             float dt = (float)Math.Min(gameTime.ElapsedGameTime.TotalSeconds, 1.0 / 20.0);
             ads.Update();
 
@@ -163,7 +190,6 @@ namespace ObstacleDodge
             }
 
             AfterUpdate?.Invoke(dt);
-            base.Update(gameTime);
         }
 
         /// <summary>Keyboard (like Input.GetAxis) + on-screen buttons, clamped to -1..1 (guide 4.3).</summary>
@@ -217,6 +243,18 @@ namespace ObstacleDodge
 
         protected override void Draw(GameTime gameTime)
         {
+            if (fatalError == null)
+            {
+                try { DrawCore(); }
+                catch (Exception e) { Fail("Draw", e); }
+            }
+            if (fatalError != null) GraphicsDevice.Clear(new Color(40, 10, 10));
+            base.Draw(gameTime);
+            AfterDraw?.Invoke();
+        }
+
+        void DrawCore()
+        {
             var vp = GraphicsDevice.Viewport;
             GraphicsDevice.Clear(world.Sky);
 
@@ -258,9 +296,6 @@ namespace ObstacleDodge
             }
             if (ads.IsShowingAd) gameUI.DrawAdOverlay(batch);
             batch.End();
-
-            base.Draw(gameTime);
-            AfterDraw?.Invoke();
         }
     }
 }

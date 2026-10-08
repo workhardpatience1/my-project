@@ -33,29 +33,63 @@ namespace ObstacleDodge
         protected override void OnCreate(Bundle bundle)
         {
             base.OnCreate(bundle);
+            CrashReporter.Install(this);
             Window.AddFlags(WindowManagerFlags.KeepScreenOn);
-            HideSystemBars();
+            try { HideSystemBars(); } catch { }
 
-            var root = new FrameLayout(this);
+            // The previous run crashed? Show why (with a "copy" button) before starting again.
+            string previousError = CrashReporter.TakeSaved();
+            if (previousError != null)
+                CrashReporter.Show(this, "Oldingi safar xato bo'ldi", previousError, StartGame);
+            else
+                StartGame();
+        }
+
+        void StartGame()
+        {
+            if (game != null) return;
+            try
+            {
+                var root = new FrameLayout(this);
 #if ADMOB
-            var adMob = new AdMobAds(this);
-            ads = adMob;
-            // A 320x50 dp banner; we know its size before it loads, so the buttons never jump.
-            float density = Resources.DisplayMetrics.Density;
-            bannerHeightPx = (int)(50 * density);
-            bannerWidthPx = (int)(320 * density);
+                AdMobAds adMob = null;
+                try
+                {
+                    adMob = new AdMobAds(this);
+                    ads = adMob;
+                    // A 320x50 dp banner; we know its size before it loads, so the buttons never jump.
+                    float density = Resources.DisplayMetrics.Density;
+                    bannerHeightPx = (int)(50 * density);
+                    bannerWidthPx = (int)(320 * density);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("[Ads] AdMob not available: " + e);
+                    adMob = null;
+                    ads = new StubAdsProvider();
+                    bannerHeightPx = bannerWidthPx = 0;
+                }
 #else
-            ads = new StubAdsProvider();
-            bannerHeightPx = bannerWidthPx = 0;
+                ads = new StubAdsProvider();
+                bannerHeightPx = bannerWidthPx = 0;
 #endif
-            game = new ObstacleDodgeGame(this);
-            var view = (View)game.Services.GetService(typeof(View));
-            root.AddView(view, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent));
+                game = new ObstacleDodgeGame(this);
+                var view = (View)game.Services.GetService(typeof(View));
+                root.AddView(view, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent));
 #if ADMOB
-            adMob.AttachBanner(root);
+                if (adMob != null)
+                {
+                    try { adMob.AttachBanner(root); }
+                    catch (Exception e) { Console.WriteLine("[Ads] Banner: " + e); bannerHeightPx = bannerWidthPx = 0; }
+                }
 #endif
-            SetContentView(root);
-            game.Run();
+                SetContentView(root);
+                game.Run();
+            }
+            catch (Exception e)
+            {
+                ReportError("Start: " + e);
+            }
         }
 
         // ---- IPlatform ----
@@ -82,6 +116,12 @@ namespace ObstacleDodge
         }
 
         public void Quit() => RunOnUiThread(() => MoveTaskToBack(true));
+
+        public void ReportError(string text)
+        {
+            CrashReporter.Save(text);
+            CrashReporter.Show(this, "Xato", text);
+        }
 
         // ---- full screen ----
 
@@ -115,6 +155,7 @@ namespace ObstacleDodge
 
         // ---- the banner follows the activity's life ----
 #if ADMOB
+        // (game may still be null while the "previous error" window is open)
         protected override void OnPause()
         {
             (ads as AdMobAds)?.Pause();

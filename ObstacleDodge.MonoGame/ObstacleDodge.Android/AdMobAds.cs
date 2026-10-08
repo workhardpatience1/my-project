@@ -52,6 +52,12 @@ namespace ObstacleDodge
 
         void OnInitialized()
         {
+            try { OnInitializedCore(); }
+            catch (Exception e) { Console.WriteLine("[Ads] After init: " + e.Message); }
+        }
+
+        void OnInitializedCore()
+        {
             if (initialized) return;
             initialized = true;
             Console.WriteLine("[Ads] AdMob ready");
@@ -66,6 +72,8 @@ namespace ObstacleDodge
         {
             if (loadingInterstitial || interstitial != null) return;
             loadingInterstitial = true;
+            try
+            {
             InterstitialAd.Load(activity, AdIds.Interstitial, new AdRequest.Builder().Build(), new InterstitialLoad(
                 ad =>
                 {
@@ -79,6 +87,12 @@ namespace ObstacleDodge
                     Console.WriteLine("[Ads] Interstitial load failed: " + error?.Message);
                     RetryLater(ref interstitialRetry, LoadInterstitial);
                 }));
+            }
+            catch (Exception e)
+            {
+                loadingInterstitial = false;
+                Console.WriteLine("[Ads] Interstitial load error: " + e.Message);
+            }
         }
 
         public bool IsInterstitialReady => interstitial != null;
@@ -109,6 +123,8 @@ namespace ObstacleDodge
         {
             if (loadingRewarded || rewarded != null) return;
             loadingRewarded = true;
+            try
+            {
             RewardedAd.Load(activity, AdIds.Rewarded, new AdRequest.Builder().Build(), new RewardedLoad(
                 ad =>
                 {
@@ -122,6 +138,12 @@ namespace ObstacleDodge
                     Console.WriteLine("[Ads] Rewarded load failed: " + error?.Message);
                     RetryLater(ref rewardedRetry, LoadRewarded);
                 }));
+            }
+            catch (Exception e)
+            {
+                loadingRewarded = false;
+                Console.WriteLine("[Ads] Rewarded load error: " + e.Message);
+            }
         }
 
         public bool IsRewardedReady => rewarded != null;
@@ -160,13 +182,13 @@ namespace ObstacleDodge
         {
             activity.RunOnUiThread(() =>
             {
-                if (banner != null) banner.Visibility = visible ? ViewStates.Visible : ViewStates.Gone;
+                try { if (banner != null) banner.Visibility = visible ? ViewStates.Visible : ViewStates.Gone; } catch { }
             });
         }
 
-        public void Pause() => banner?.Pause();
-        public void Resume() => banner?.Resume();
-        public void Destroy() => banner?.Destroy();
+        public void Pause() { try { banner?.Pause(); } catch { } }
+        public void Resume() { try { banner?.Resume(); } catch { } }
+        public void Destroy() { try { banner?.Destroy(); } catch { } }
 
         /// <summary>No ad (no internet, no fill)? Try again after 10, 20, 40... seconds (max 2 minutes).</summary>
         void RetryLater(ref int attempt, Action load)

@@ -56,22 +56,9 @@ namespace ObstacleDodge
                 ?? throw new InvalidOperationException("font.png resource is missing");
             using Stream txt = assembly.GetManifestResourceStream("ObstacleDodge.font.txt")
                 ?? throw new InvalidOperationException("font.txt resource is missing");
-            var texture = Texture2D.FromStream(device, png);
-            PremultiplyAlpha(texture);
+            var texture = Texture2D.FromStream(device, png, DefaultColorProcessors.PremultiplyAlpha);
             using var reader = new StreamReader(txt);
             return new BitmapFont(texture, reader.ReadToEnd());
-        }
-
-        static void PremultiplyAlpha(Texture2D texture)
-        {
-            var data = new Color[texture.Width * texture.Height];
-            texture.GetData(data);
-            for (int i = 0; i < data.Length; i++)
-            {
-                var c = data[i];
-                data[i] = new Color(c.R * c.A / 255, c.G * c.A / 255, c.B * c.A / 255, c.A);
-            }
-            texture.SetData(data);
         }
 
         /// <summary>Size of the text drawn at the given pixel size.</summary>

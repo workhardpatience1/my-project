@@ -8,14 +8,15 @@
     <!-- Change these before publishing (the package name must match the one in AdMob / Google Play). -->
     <ApplicationId>com.workhardpatience.obstacledodge</ApplicationId>
     <ApplicationTitle>Obstacle Dodge</ApplicationTitle>
-    <ApplicationVersion>1</ApplicationVersion>
-    <ApplicationDisplayVersion>1.0.0</ApplicationDisplayVersion>
+    <ApplicationVersion>2</ApplicationVersion>
+    <ApplicationDisplayVersion>1.0.1</ApplicationDisplayVersion>
 
     <!-- APK to install directly on a phone. For Google Play build with -p:AndroidPackageFormat=aab -->
     <AndroidPackageFormat>apk</AndroidPackageFormat>
     <RuntimeIdentifiers>android-arm64;android-arm</RuntimeIdentifiers>
     <TrimMode>partial</TrimMode>
-    <AndroidEnableMultiDex>true</AndroidEnableMultiDex>
+    <!-- MonoGame is built for .NET 8: keep the classic (safest) way of calling C# from Java. -->
+    <AndroidEnableMarshalMethods>false</AndroidEnableMarshalMethods>
 
     <!-- Ads: true = Google AdMob (needs internet access to dl.google.com while building). -->
     <UseAdMob Condition="'$(UseAdMob)' == ''">true</UseAdMob>

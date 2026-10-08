@@ -26,6 +26,9 @@ namespace ObstacleDodge
 
         /// <summary>Leave the game (Android: back to the home screen).</summary>
         void Quit();
+
+        /// <summary>Something went wrong: show the error text to the player instead of closing silently.</summary>
+        void ReportError(string text);
     }
 
     /// <summary>

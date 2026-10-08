@@ -14,6 +14,7 @@ namespace ObstacleDodge
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ObstacleDodge");
         public void Vibrate(int milliseconds) { }
         public void Quit() { }
+        public void ReportError(string text) => Console.Error.WriteLine("[Error] " + text);
     }
 
     static class Program
