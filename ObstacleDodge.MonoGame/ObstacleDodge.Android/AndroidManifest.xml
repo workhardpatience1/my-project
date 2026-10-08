@@ -9,7 +9,8 @@
       android:icon="@mipmap/appicon"
       android:hardwareAccelerated="true"
       android:allowBackup="true">
-    <!-- AdMob App ID (this one is Google's TEST id). Put your own from admob.google.com here. -->
-    <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="@string/admob_app_id" />
+    <!-- AdMob App ID. This one is Google's official TEST App ID.
+         Before publishing put YOUR App ID from admob.google.com here (and the ad unit IDs in AdIds.cs). -->
+    <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-3940256099942544~3347511713" />
   </application>
 </manifest>

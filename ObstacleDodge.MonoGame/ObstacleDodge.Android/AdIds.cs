@@ -5,7 +5,7 @@ namespace ObstacleDodge
     /// and are safe to click. Before publishing:
     ///   1. Create an app in admob.google.com (Android, package com.workhardpatience.obstacledodge).
     ///   2. Create 3 ad units: Banner, Interstitial, Rewarded.
-    ///   3. Paste their IDs below and your App ID into Resources/values/strings.xml (admob_app_id).
+    ///   3. Paste their IDs below and your App ID into AndroidManifest.xml (com.google.android.gms.ads.APPLICATION_ID).
     /// Never click your own real ads (the account gets banned) — use test devices instead.
     /// </summary>
     public static class AdIds

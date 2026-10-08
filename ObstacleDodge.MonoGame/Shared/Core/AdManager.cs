@@ -20,6 +20,12 @@ namespace ObstacleDodge
         readonly ConcurrentQueue<Action> gameThreadQueue = new ConcurrentQueue<Action>();
         readonly Stopwatch clock = Stopwatch.StartNew();
         double lastInterstitialTime = double.NegativeInfinity;
+        double adStartedAt;
+        int adToken;           // which show the callbacks belong to
+        Action pendingFailure; // what to do if the ad never reports back
+
+        /// <summary>If an ad never reports that it closed, the game goes on after this many seconds.</summary>
+        public double AdTimeoutSeconds { get; set; } = 150;
 
         /// <summary>True while a full screen ad is open: the game is paused and ignores input.</summary>
         public bool IsShowingAd { get; private set; }
@@ -44,18 +50,17 @@ namespace ObstacleDodge
         public void ShowRewarded(Action onReward, Action onFail = null)
         {
             if (!IsRewardedReady()) { onFail?.Invoke(); return; }
-            IsShowingAd = true;
+            int token = BeginAd(onFail);
             try
             {
                 provider.ShowRewarded(
-                    () => Post(() => { IsShowingAd = false; onReward?.Invoke(); }),
-                    () => Post(() => { IsShowingAd = false; onFail?.Invoke(); }));
+                    () => Post(() => { if (EndAd(token)) onReward?.Invoke(); }),
+                    () => Post(() => { if (EndAd(token)) onFail?.Invoke(); }));
             }
             catch (Exception e)
             {
                 Console.WriteLine("[Ads] Rewarded failed: " + e.Message);
-                IsShowingAd = false;
-                onFail?.Invoke();
+                if (EndAd(token)) onFail?.Invoke();
             }
         }
 
@@ -72,16 +77,15 @@ namespace ObstacleDodge
             if (tooSoon || !ready || IsShowingAd) { onDone?.Invoke(); return; }
 
             lastInterstitialTime = now;
-            IsShowingAd = true;
+            int token = BeginAd(onDone);
             try
             {
-                provider.ShowInterstitial(() => Post(() => { IsShowingAd = false; onDone?.Invoke(); }));
+                provider.ShowInterstitial(() => Post(() => { if (EndAd(token)) onDone?.Invoke(); }));
             }
             catch (Exception e)
             {
                 Console.WriteLine("[Ads] Interstitial failed: " + e.Message);
-                IsShowingAd = false;
-                onDone?.Invoke();
+                if (EndAd(token)) onDone?.Invoke();
             }
         }
 
@@ -94,6 +98,32 @@ namespace ObstacleDodge
         public void Update()
         {
             while (gameThreadQueue.TryDequeue(out var action)) action();
+
+            // safety net: never leave the game frozen behind an ad that did not report back
+            if (IsShowingAd && clock.Elapsed.TotalSeconds - adStartedAt > AdTimeoutSeconds)
+            {
+                Console.WriteLine("[Ads] No answer from the ad, continuing the game");
+                var failure = pendingFailure;
+                EndAd(adToken);
+                failure?.Invoke();
+            }
+        }
+
+        int BeginAd(Action onFailure)
+        {
+            IsShowingAd = true;
+            adStartedAt = clock.Elapsed.TotalSeconds;
+            pendingFailure = onFailure;
+            return ++adToken;
+        }
+
+        /// <summary>Closes the current ad; false if this callback is late or doubled (then it is ignored).</summary>
+        bool EndAd(int token)
+        {
+            if (!IsShowingAd || token != adToken) return false;
+            IsShowingAd = false;
+            pendingFailure = null;
+            return true;
         }
 
         void Post(Action action) => gameThreadQueue.Enqueue(action);

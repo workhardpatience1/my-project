@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>{{{ PRODUCT_NAME }}}</title>
+
+  <!-- ===== Monetag (ads guide, Part 6.4) =====
+       1) If Monetag asks for a meta tag to confirm your site, put it here:
+          <meta name="monetag" content="CONFIRMATION_CODE_FROM_PANEL">
+       2) Paste the SDK code of your zone from the Monetag panel here (as it is).
+       3) Put the show_ZONE_NUMBER() functions from the panel into the two wrappers below.
+       Until then the "Reklama ko'rish" button simply does not appear in the WebGL version. -->
+  <script>
+    // Rewarded: must return a Promise that finishes after the ad is watched
+    window.monetagShowRewarded = undefined; // e.g. function () { return show_1234567(); };
+    // Interstitial between rounds
+    window.monetagShowInterstitial = undefined; // e.g. function () { return show_1234567(); };
+  </script>
+
+  <style>
+    html, body { margin: 0; padding: 0; background: #1b2735; color: #fff; font-family: sans-serif; }
+    #unity-container { width: 100%; max-width: 1280px; margin: 0 auto; }
+    #unity-canvas { width: 100%; aspect-ratio: 16 / 9; display: block; background: #87c8f5; }
+    #unity-loading { text-align: center; padding: 8px; }
+    #ad-banner-bottom { text-align: center; margin: 8px auto; min-height: 50px; }
+  </style>
+</head>
+<body>
+  <div id="unity-container">
+    <canvas id="unity-canvas" tabindex="-1"></canvas>
+    <div id="unity-loading">Yuklanmoqda... <span id="unity-progress">0</span>%</div>
+  </div>
+
+  <!-- ===== Adsterra banner (ads guide, Part 7.4): next to the game, never on top of it ===== -->
+  <div id="ad-banner-bottom">
+    <!-- BANNER_CODE_FROM_ADSTERRA_PANEL -->
+  </div>
+
+  <script>
+    var buildUrl = "Build";
+    var loaderUrl = buildUrl + "/{{{ LOADER_FILENAME }}}";
+    var config = {
+      dataUrl: buildUrl + "/{{{ DATA_FILENAME }}}",
+      frameworkUrl: buildUrl + "/{{{ FRAMEWORK_FILENAME }}}",
+#if USE_THREADS
+      workerUrl: buildUrl + "/{{{ WORKER_FILENAME }}}",
+#endif
+#if USE_WASM
+      codeUrl: buildUrl + "/{{{ CODE_FILENAME }}}",
+#endif
+#if MEMORY_FILENAME
+      memoryUrl: buildUrl + "/{{{ MEMORY_FILENAME }}}",
+#endif
+#if SYMBOLS_FILENAME
+      symbolsUrl: buildUrl + "/{{{ SYMBOLS_FILENAME }}}",
+#endif
+      streamingAssetsUrl: "StreamingAssets",
+      companyName: {{{ JSON.stringify(COMPANY_NAME) }}},
+      productName: {{{ JSON.stringify(PRODUCT_NAME) }}},
+      productVersion: {{{ JSON.stringify(PRODUCT_VERSION) }}},
+    };
+
+    var canvas = document.querySelector("#unity-canvas");
+    var script = document.createElement("script");
+    script.src = loaderUrl;
+    script.onload = function () {
+      createUnityInstance(canvas, config, function (progress) {
+        document.querySelector("#unity-progress").textContent = Math.round(progress * 100);
+      }).then(function (unityInstance) {
+        window.unityInstance = unityInstance; // ads guide 6.4, step 2
+        document.querySelector("#unity-loading").style.display = "none";
+      }).catch(function (message) {
+        alert(message);
+      });
+    };
+    document.body.appendChild(script);
+  </script>
+
+  <!-- SOCIAL_BAR_CODE_FROM_ADSTERRA_PANEL (optional, ads guide 7.4) -->
+</body>
+</html>
