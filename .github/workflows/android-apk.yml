@@ -1,0 +1,90 @@
+# Builds the Android APK of the C# (MonoGame) version with Google AdMob ads,
+# runs the logic tests, and publishes the APK:
+#   - as a GitHub Release "latest-apk" (stable download link),
+#   - as a build artifact,
+#   - and commits it to apk/ObstacleDodge.apk on the same branch.
+name: Android APK (C# / MonoGame)
+
+on:
+  push:
+    paths:
+      - 'ObstacleDodge.MonoGame/**'
+      - '.github/workflows/android-apk.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install the .NET Android workload
+        run: dotnet workload install android
+
+      - name: Install Android SDK platform 36
+        run: |
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKMANAGER" --licenses > /dev/null || true
+          "$SDKMANAGER" "platforms;android-36" "build-tools;36.0.0" "platform-tools" > /dev/null
+
+      - name: Logic tests (game loop, hits, ads flow, every level can be finished)
+        run: dotnet run -c Release --project ObstacleDodge.MonoGame/ObstacleDodge.Tests
+
+      - name: Build the APK (with AdMob)
+        run: |
+          dotnet publish ObstacleDodge.MonoGame/ObstacleDodge.Android/ObstacleDodge.Android.csproj \
+            -c Release -p:UseAdMob=true \
+            -p:AndroidSdkDirectory="$ANDROID_HOME" -p:JavaSdkDirectory="$JAVA_HOME" \
+            -o publish
+          ls -la publish
+          cp publish/*-Signed.apk ObstacleDodge.apk
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --print-certs ObstacleDodge.apk | head -5
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ObstacleDodge-apk
+          path: ObstacleDodge.apk
+
+      - name: Publish the "latest-apk" release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest-apk --yes --cleanup-tag || true
+          gh release create latest-apk ObstacleDodge.apk \
+            --target "$GITHUB_SHA" \
+            --title "Obstacle Dodge — APK (eng so'nggi)" \
+            --notes "Avtomatik yig'ilgan APK (branch: ${GITHUB_REF_NAME}, commit: ${GITHUB_SHA::7}). Telefonga yuklab olib o'rnating. Reklamalar: Google AdMob (hozircha TEST reklamalar)." \
+            --prerelease
+
+      - name: Commit the APK to apk/ObstacleDodge.apk
+        run: |
+          mkdir -p apk
+          cp ObstacleDodge.apk apk/ObstacleDodge.apk
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apk/ObstacleDodge.apk
+          if git diff --cached --quiet; then echo "APK unchanged"; exit 0; fi
+          git commit -m "Build APK for ${GITHUB_SHA::7} [skip ci]"
+          for i in 1 2 3; do
+            git pull --rebase origin "$GITHUB_REF_NAME" && git push origin "HEAD:$GITHUB_REF_NAME" && break
+            sleep 5
+          done

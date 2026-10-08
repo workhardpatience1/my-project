@@ -1,0 +1,24 @@
+# .NET / MonoGame build output
+bin/
+obj/
+*.user
+.vs/
+.idea/
+*.swp
+
+# Unity
+ObstacleDodge.Unity/[Ll]ibrary/
+ObstacleDodge.Unity/[Tt]emp/
+ObstacleDodge.Unity/[Oo]bj/
+ObstacleDodge.Unity/[Bb]uild/
+ObstacleDodge.Unity/[Bb]uilds/
+ObstacleDodge.Unity/[Ll]ogs/
+ObstacleDodge.Unity/[Uu]ser[Ss]ettings/
+ObstacleDodge.Unity/*.csproj
+ObstacleDodge.Unity/*.sln
+ObstacleDodge.Unity/*.apk
+ObstacleDodge.Unity/*.aab
+
+# real signing keys must never be committed (debug.keystore is a public test key)
+*.jks
+release.keystore

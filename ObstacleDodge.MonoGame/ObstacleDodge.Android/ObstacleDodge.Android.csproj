@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-android</TargetFramework>
+    <SupportedOSPlatformVersion>23</SupportedOSPlatformVersion>
+    <OutputType>Exe</OutputType>
+    <IncludeSharedGame>true</IncludeSharedGame>
+
+    <!-- Change these before publishing (the package name must match the one in AdMob / Google Play). -->
+    <ApplicationId>com.workhardpatience.obstacledodge</ApplicationId>
+    <ApplicationTitle>Obstacle Dodge</ApplicationTitle>
+    <ApplicationVersion>1</ApplicationVersion>
+    <ApplicationDisplayVersion>1.0.0</ApplicationDisplayVersion>
+
+    <!-- APK to install directly on a phone. For Google Play build with -p:AndroidPackageFormat=aab -->
+    <AndroidPackageFormat>apk</AndroidPackageFormat>
+    <RuntimeIdentifiers>android-arm64;android-arm</RuntimeIdentifiers>
+    <TrimMode>partial</TrimMode>
+    <AndroidEnableMultiDex>true</AndroidEnableMultiDex>
+
+    <!-- Ads: true = Google AdMob (needs internet access to dl.google.com while building). -->
+    <UseAdMob Condition="'$(UseAdMob)' == ''">true</UseAdMob>
+    <DefineConstants Condition="'$(UseAdMob)' == 'true'">$(DefineConstants);ADMOB</DefineConstants>
+  </PropertyGroup>
+
+  <!--
+    Signing. By default the APK is signed with the DEBUG key that is in this folder (debug.keystore,
+    password "android"), so every build has the same signature and can be installed over the old one.
+    For Google Play pass your own upload key:
+      -p:AndroidSigningKeyStore=/path/release.keystore -p:AndroidSigningKeyAlias=... 
+      -p:AndroidSigningStorePass=... -p:AndroidSigningKeyPass=...
+  -->
+  <PropertyGroup>
+    <AndroidKeyStore>true</AndroidKeyStore>
+    <AndroidSigningKeyStore Condition="'$(AndroidSigningKeyStore)' == ''">$(MSBuildThisFileDirectory)debug.keystore</AndroidSigningKeyStore>
+    <AndroidSigningKeyAlias Condition="'$(AndroidSigningKeyAlias)' == ''">androiddebugkey</AndroidSigningKeyAlias>
+    <AndroidSigningStorePass Condition="'$(AndroidSigningStorePass)' == ''">android</AndroidSigningStorePass>
+    <AndroidSigningKeyPass Condition="'$(AndroidSigningKeyPass)' == ''">android</AndroidSigningKeyPass>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MonoGame.Framework.Android" Version="3.8.5.1" />
+    <PackageReference Include="Xamarin.GooglePlayServices.Ads" Version="125.5.0" Condition="'$(UseAdMob)' == 'true'" />
+  </ItemGroup>
+</Project>

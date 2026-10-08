@@ -1,0 +1,17 @@
+<Project>
+  <PropertyGroup>
+    <RootNamespace>ObstacleDodge</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Version>1.0.0</Version>
+    <Company>Obstacle Dodge</Company>
+    <Product>Obstacle Dodge</Product>
+  </PropertyGroup>
+  <!-- The game code lives in Shared/ and is compiled into every head (Android, Desktop, Tests). -->
+  <ItemGroup Condition="'$(IncludeSharedGame)' == 'true'">
+    <Compile Include="$(MSBuildThisFileDirectory)Shared/**/*.cs" Link="Shared/%(RecursiveDir)%(Filename)%(Extension)" />
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)Shared/Content/font.png" LogicalName="ObstacleDodge.font.png" Link="Content/font.png" />
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)Shared/Content/font.txt" LogicalName="ObstacleDodge.font.txt" Link="Content/font.txt" />
+  </ItemGroup>
+</Project>
