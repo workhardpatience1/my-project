@@ -160,6 +160,17 @@ public class LevelBuilder : MonoBehaviour
             rail.transform.localScale = new Vector3(0.6f, 1f, total);
             Paint(rail, RailGray);
         }
+
+        // walls behind the start and after the finish, so nobody walks off the ground
+        foreach (float z in new[] { -3f, total - 11f })
+        {
+            var end = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            end.name = "End Wall";
+            end.transform.SetParent(root);
+            end.transform.position = new Vector3(0f, 0.5f, z);
+            end.transform.localScale = new Vector3(HalfWidth * 2f + 1.2f, 1f, 0.6f);
+            Paint(end, RailGray);
+        }
     }
 
     static Texture2D CheckerTexture(Color a, Color b)

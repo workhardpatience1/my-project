@@ -65,11 +65,12 @@ namespace ObstacleDodge
             }
             font.DrawShadowed(b, string.Format(Strings.Hits, gm.Hits, gm.MaxHits), new Vector2(26f, y + size + 6f), 26f, Color.White);
 
-            // level and progress to the finish line
+            // level and progress to the finish line (on a narrow screen: one row lower)
+            float top = Screen.X < 1000f ? 128f : 0f;
             string level = string.Format(Strings.Level, gm.Level);
-            font.DrawCentered(b, level, new Vector2(Screen.X / 2f, 40f), 38f, Color.White);
-            float barW = Math.Min(420f, Screen.X * 0.34f);
-            var bar = new RectangleF(Screen.X / 2f - barW / 2f, 70f, barW, 16f);
+            font.DrawCentered(b, level, new Vector2(Screen.X / 2f, 40f + top), 38f, Color.White);
+            float barW = Math.Min(420f, Screen.X * (top > 0 ? 0.6f : 0.34f));
+            var bar = new RectangleF(Screen.X / 2f - barW / 2f, 70f + top, barW, 16f);
             ui.Panel(b, bar.Inflate(3), Color.Black * 0.35f, 10f);
             ui.Panel(b, new RectangleF(bar.X, bar.Y, Math.Max(16f, bar.Width * world.Progress), bar.Height), new Color(255, 213, 79), 8f);
             ui.Icon(b, ui.Star, new Vector2(bar.Right + 22f, bar.Y + 8f), 34f, Color.White);
@@ -98,7 +99,8 @@ namespace ObstacleDodge
             ui.Rect(b, new RectangleF(0, 0, Screen.X, Screen.Y), Color.Black * 0.18f);
 
             float bounce = MathF.Sin(time * 2.2f) * 6f;
-            font.DrawCentered(b, Strings.Title, new Vector2(Screen.X / 2f, h * 0.2f + bounce), 92f, new Color(255, 213, 79));
+            float titleSize = MathF.Min(92f, 92f * (Screen.X - 60f) / font.Measure(Strings.Title, 92f).X);
+            font.DrawCentered(b, Strings.Title, new Vector2(Screen.X / 2f, h * 0.2f + bounce), titleSize, new Color(255, 213, 79));
             font.DrawCentered(b, Strings.Subtitle, new Vector2(Screen.X / 2f, h * 0.2f + 74f), 32f, Color.White);
 
             // level picker: ◀ 3-DARAJA ▶
