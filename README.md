@@ -119,7 +119,8 @@ Qoʻllanmadagi barcha skriptlar `Assets/Scripts/` da: `Mover`, `Scorer`, `Object
 (+ `LevelBuilder`, `FollowCamera`, `FinishLine`, `SlidingWall`). WebGL uchun `Plugins/WebGL/WebAds.jslib`
 va `WebGLTemplates/ObstacleDodge/index.html` (Monetag + Adsterra joylari).
 
-* **Ochish:** Unity Hub → *Add project from disk* → `ObstacleDodge.Unity` papkasi (Unity **6000.0.x**). ▶ Play bosing.
+* **Yuklab olish (faqat Unity loyihasi):** [ObstacleDodge-Unity.zip](https://github.com/workhardpatience1/my-project/releases/download/latest-apk/ObstacleDodge-Unity.zip)
+* **Ochish:** Unity Hub → *Add project from disk* → `ObstacleDodge.Unity` papkasi (Unity **6000.0.x** yoki yangiroq). ▶ Play bosing.
   Daraja sahnaga qoʻlda emas, `LevelBuilder.cs` orqali **kod bilan** quriladi (qoʻllanmadagi Part 3–6 ning aynan oʻzi).
 * **“Hit” tegi** va tavsiya etilgan sozlamalar (paket nomi, landshaft, IL2CPP + ARM64, minSdk 24) loyiha
   ochilganda avtomatik qoʻyiladi (`Editor/ProjectSetup.cs`). Menyu: **Obstacle Dodge → Apply recommended settings**.

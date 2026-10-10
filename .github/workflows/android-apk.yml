@@ -3,12 +3,14 @@
 #   - as a GitHub Release "latest-apk" (stable download link),
 #   - as a build artifact,
 #   - and commits it to apk/ObstacleDodge.apk on the same branch.
+# The release also gets ObstacleDodge-Unity.zip (the Unity project, ready to open in Unity Hub).
 name: Android APK (C# / MonoGame)
 
 on:
   push:
     paths:
       - 'ObstacleDodge.MonoGame/**'
+      - 'ObstacleDodge.Unity/**'
       - '.github/workflows/android-apk.yml'
   workflow_dispatch:
 
@@ -64,15 +66,18 @@ jobs:
           name: ObstacleDodge-apk
           path: ObstacleDodge.apk
 
+      - name: Zip the Unity project
+        run: git archive --format=zip --prefix=ObstacleDodge.Unity/ -o ObstacleDodge-Unity.zip HEAD:ObstacleDodge.Unity
+
       - name: Publish the "latest-apk" release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete latest-apk --yes --cleanup-tag || true
-          gh release create latest-apk ObstacleDodge.apk \
+          gh release create latest-apk ObstacleDodge.apk ObstacleDodge-Unity.zip \
             --target "$GITHUB_SHA" \
             --title "Obstacle Dodge — APK (eng so'nggi)" \
-            --notes "Avtomatik yig'ilgan APK (branch: ${GITHUB_REF_NAME}, commit: ${GITHUB_SHA::7}). Telefonga yuklab olib o'rnating. Reklamalar: Google AdMob (hozircha TEST reklamalar)." \
+            --notes "Avtomatik yig'ilgan APK (branch: ${GITHUB_REF_NAME}, commit: ${GITHUB_SHA::7}). ObstacleDodge.apk — telefonga o'rnating (reklamalar: Google AdMob, hozircha TEST). ObstacleDodge-Unity.zip — Unity loyihasi: oching va Unity Hub → Add project from disk." \
             --prerelease
 
       - name: Commit the APK to apk/ObstacleDodge.apk
