@@ -123,6 +123,15 @@ namespace ObstacleDodge
 
             var sound = new RectangleF(Screen.X - 330f, 20f, 310f, 60f);
             if (Button(b, sound, gm.Save.SoundOn ? Strings.SoundOn : Strings.SoundOff, Gray, 26f)) ToggleSound?.Invoke();
+
+            var privacy = new RectangleF(20f, 20f, 290f, 60f);
+            if (Button(b, privacy, Strings.Privacy, Gray, 26f)) platform.OpenUrl(Strings.PrivacyUrl);
+            AdManager ads = AdManager.Instance;
+            if (ads != null && ads.PrivacyOptionsRequired)
+            {
+                var adSettings = new RectangleF(20f, 92f, 290f, 60f);
+                if (Button(b, adSettings, Strings.AdSettings, Gray, 26f)) ads.ShowPrivacyOptions();
+            }
         }
 
         public void DrawPause(SpriteBatch b, GameManager gm)
@@ -135,18 +144,40 @@ namespace ObstacleDodge
 
         public void DrawGameOver(SpriteBatch b, GameManager gm, World world)
         {
+            string distance = string.Format(Strings.Distance, (int)(world.Progress * 100));
+            if (gm.GameOverAdPending)
+            {
+                // all lives are gone: the ad comes first, the buttons appear after it
+                Window(b, 0, Strings.GameOver, out _, distance);
+                return;
+            }
+
             AdManager ads = AdManager.Instance;
-            bool offerAd = gm.CanContinue && ads != null && ads.IsRewardedReady();
+            bool offerAd = gm.CanContinue && ads != null;
             int rows = offerAd ? 3 : 2;
-            var panel = Window(b, rows, Strings.GameOver, out float y, string.Format(Strings.Distance, (int)(world.Progress * 100)));
+            var panel = Window(b, rows, Strings.GameOver, out float y, distance);
 
             if (offerAd)
             {
                 // the rewarded ad is only shown when the player asks for it (guide 1.4)
-                if (Button(b, Row(panel, ref y), string.Format(Strings.WatchAd, gm.BonusLives), Gold, 36f, true))
+                var row = Row(panel, ref y);
+                if (ads.IsRewardedReady())
                 {
-                    ads.ShowRewarded(gm.ContinueAfterReward);
-                    return;
+                    if (Button(b, row, string.Format(Strings.WatchAd, gm.BonusLives), Gold, 36f, true))
+                    {
+                        ads.ShowRewarded(
+                            () =>
+                            {
+                                gm.ContinueAfterReward();
+                                if (gm.State == GameState.Playing) ShowNotice(string.Format(Strings.RewardEarned, gm.BonusLives));
+                            },
+                            () => ShowNotice(Strings.RewardNotEarned));
+                        return;
+                    }
+                }
+                else
+                {
+                    DisabledButton(b, row, Strings.AdLoading);
                 }
             }
             if (Button(b, Row(panel, ref y), Strings.PlayAgain, Green)) gm.Restart();
@@ -236,6 +267,33 @@ namespace ObstacleDodge
             bool pressed = enabled && input.IsPressing(r);
             ui.Panel(b, r, enabled ? (pressed ? Blue * 0.7f : Blue) : Gray * 0.6f, 20f);
             ui.Icon(b, ui.Arrow, r.Center, r.Width * 0.45f, Color.White * (enabled ? 1f : 0.5f), angle);
+        }
+
+        void DisabledButton(SpriteBatch b, RectangleF r, string text)
+        {
+            ui.Panel(b, new RectangleF(r.X, r.Y + 7, r.Width, r.Height), Darken(Gray, 0.55f), 24f);
+            ui.Panel(b, r, Gray * 0.75f, 24f);
+            font.DrawCentered(b, text, r.Center, 32f, Color.White * 0.75f);
+        }
+
+        // ---- a short message at the top of the screen (for example after a rewarded ad) ----
+
+        string notice;
+        DateTime noticeUntil;
+
+        public void ShowNotice(string text)
+        {
+            notice = text;
+            noticeUntil = DateTime.UtcNow.AddSeconds(3);
+        }
+
+        public void DrawNotice(SpriteBatch b)
+        {
+            if (notice == null || DateTime.UtcNow > noticeUntil) return;
+            Vector2 size = font.Measure(notice, 30f);
+            var box = new RectangleF(Screen.X / 2f - size.X / 2f - 24f, 110f, size.X + 48f, 58f);
+            ui.Panel(b, box, Color.Black * 0.7f, 20f);
+            font.DrawCentered(b, notice, box.Center, 30f, Color.White, false);
         }
 
         static Color Darken(Color c, float k) => new Color((int)(c.R * k), (int)(c.G * k), (int)(c.B * k), c.A);

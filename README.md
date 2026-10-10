@@ -41,13 +41,22 @@ APK har safar kod oʻzgarganda GitHub Actions tomonidan **avtomatik** qayta yig�
 
 ## 💰 Reklama
 
-APK da **Google AdMob** ulangan (qoʻllanmadagi uchta reklama turi):
+APK da **Google AdMob** ulangan:
 
 | Tur | Qachon chiqadi |
 |---|---|
+| **Interstitial** (toʻliq ekran) | **Har safar 5 ta jon tugaganda** (OʻYIN TUGADI) — 1 soniyadan keyin avtomatik. “Qayta oʻynash” va “Menyu” tugmalari reklama yopilgandan keyin chiqadi |
+| **Interstitial** | Har **3-chi** “Keyingi daraja” oldidan (60 soniyadan tez-tez emas) |
+| **Rewarded** (mukofotli) | Faqat oʻyinchi *“Reklama koʻrish: +3 jon”* tugmasini bossa (bir raundda bir marta). Reklama hali yuklanmagan boʻlsa — tugma kulrang: *“Reklama yuklanmoqda...”* |
 | **Banner** (320×50) | Doim ekranning pastki markazida; tugmalar unga tegmaydi |
-| **Rewarded** (mukofotli) | Faqat oʻyinchi *“Reklama koʻrish: +3 jon”* tugmasini bossa (bir raundda bir marta) |
-| **Interstitial** (toʻliq ekran) | Har **3-chi** “Qayta oʻynash”/“Keyingi daraja”da, lekin 60 soniyadan tez-tez emas |
+
+* “Qayta oʻynash” ning oʻzi reklama koʻrsatmaydi — reklama allaqachon Game Over paytida chiqqan.
+* Mukofotli reklama oxirigacha koʻrilmasa, jon berilmaydi va ekranda shu haqda yozuv chiqadi.
+* Reklamadan oldin Google'ning **rozilik oynasi (UMP)** ishlaydi: Yevropa/Buyuk Britaniyada birinchi
+  ochilishda chiqadi, boshqa joyda (masalan, Oʻzbekistonda) chiqmaydi. Kerak boʻlsa, menyuda
+  **“Reklama sozlamalari”** tugmasi paydo boʻladi.
+* Menyuda **“Maxfiylik siyosati”** tugmasi [PRIVACY.md](PRIVACY.md) sahifasini ochadi
+  (Google Play reklamali ilovalar uchun buni talab qiladi). Faylda **[ALOQA EMAIL]** oʻrniga oʻz emailingizni yozing.
 
 > ⚠️ **Hozir Google'ning rasmiy TEST reklamalari qoʻyilgan** — ular “Test Ad” deb koʻrinadi va pul keltirmaydi.
 > Bu ataylab: oʻz haqiqiy reklamangizni oʻzingiz bossangiz, AdMob akkauntni bloklaydi.
@@ -84,7 +93,7 @@ Repozitoriyda oʻyinning **ikki versiyasi** bor, ikkalasi ham C#:
 | `Shared/World/LevelGenerator.cs` | (Part 6) | Darajani qurish |
 | `ObstacleDodge.Android/` | (Part 5) | Android ilova + **AdMob** (`AdMobAds.cs`, `AdIds.cs`) |
 | `ObstacleDodge.Desktop/` | — | Kompyuter versiyasi (Windows/Linux/macOS) + avtomatik skrinshot testi |
-| `ObstacleDodge.Tests/` | — | Mantiq testlari (25 ta) |
+| `ObstacleDodge.Tests/` | — | Mantiq testlari (30 ta) |
 
 Mahalliy yigʻish (.NET 10 SDK kerak):
 
@@ -119,6 +128,8 @@ va `WebGLTemplates/ObstacleDodge/index.html` (Monetag + Adsterra joylari).
   `LEVELPLAY_INSTALLED` belgisi avtomatik qoʻshiladi va `AdManager` haqiqiy SDK dan foydalanadi.
   LevelPlay saytidagi App Key va 3 ta Ad Unit ID ni sahnadagi **AdManager** obyektiga yoki `AdManager.cs` dagi
   maydonlarga yozing. Paket oʻrnatilmagan boʻlsa ham loyiha xatosiz yigʻiladi (reklama oʻrniga “stub”).
+* **Reklama qoidasi** APK bilan bir xil: har Game Over'da interstitial (`GameManager.cs`, `adOnGameOver`),
+  har 3-chi keyingi darajada yana bitta; “+3 jon” tugmasi reklama yuklanguncha kulrang turadi.
 * **Bulutda yigʻish (ixtiyoriy):** `.github/workflows/unity-build.yml` — `UNITY_EMAIL`, `UNITY_PASSWORD`,
   `UNITY_LICENSE` secret larini qoʻshing va *Actions → Unity build → Run workflow* bosing.
 
@@ -134,8 +145,8 @@ va `WebGLTemplates/ObstacleDodge/index.html` (Monetag + Adsterra joylari).
 
 ## ✅ Nima tekshirilgan / ❗ nima tekshirilmagan
 
-* ✅ 25 ta mantiq testi (urilishlar, 5-chi urilishda Game Over, +3 jon bir marta, har 3-chi qayta boshlashda
-  interstitial, marra, saqlash, har bir 1–60 daraja oʻtsa boʻladi) — har bir build da GitHub Actions'da ishlaydi.
+* ✅ 30 ta mantiq testi (urilishlar, 5-chi urilishda Game Over, **har Game Over'da interstitial**, +3 jon bir marta,
+  har 3-chi keyingi darajada interstitial, marra, saqlash, har bir 1–60 daraja oʻtsa boʻladi) — har bir build da GitHub Actions'da ishlaydi.
 * ✅ Kompyuter versiyasi avtomatik oʻynatildi (menyu → oʻyin → Game Over → reklama → +3 jon → marra → keyingi daraja → pauza),
   skrinshotlar yuqorida.
 * ✅ APK GitHub Actions'da AdMob bilan yigʻildi, imzosi (v2/v3) va ichidagi AdMob klasslari tekshirildi.

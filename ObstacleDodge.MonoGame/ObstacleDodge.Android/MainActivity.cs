@@ -117,6 +117,15 @@ namespace ObstacleDodge
 
         public void Quit() => RunOnUiThread(() => MoveTaskToBack(true));
 
+        public void OpenUrl(string url)
+        {
+            RunOnUiThread(() =>
+            {
+                try { StartActivity(new Android.Content.Intent(Android.Content.Intent.ActionView, Android.Net.Uri.Parse(url))); }
+                catch (Exception e) { Console.WriteLine("[Url] " + e.Message); }
+            });
+        }
+
         public void ReportError(string text)
         {
             CrashReporter.Save(text);

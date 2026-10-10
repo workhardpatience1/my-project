@@ -15,6 +15,12 @@ namespace ObstacleDodge
         public void Vibrate(int milliseconds) { }
         public void Quit() { }
         public void ReportError(string text) => Console.Error.WriteLine("[Error] " + text);
+
+        public void OpenUrl(string url)
+        {
+            try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true }); }
+            catch (Exception e) { Console.WriteLine("[Url] " + e.Message); }
+        }
     }
 
     static class Program

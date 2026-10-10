@@ -29,6 +29,9 @@ namespace ObstacleDodge
 
         /// <summary>Something went wrong: show the error text to the player instead of closing silently.</summary>
         void ReportError(string text);
+
+        /// <summary>Open a web page (the privacy policy) in the browser.</summary>
+        void OpenUrl(string url);
     }
 
     /// <summary>
@@ -48,6 +51,12 @@ namespace ObstacleDodge
         void ShowInterstitial(Action onClosed);
 
         void SetBannerVisible(bool visible);
+
+        /// <summary>True when the player must be able to change their ad consent (GDPR regions).</summary>
+        bool PrivacyOptionsRequired { get; }
+
+        /// <summary>Opens the ad consent form again.</summary>
+        void ShowPrivacyOptions();
     }
 
     /// <summary>
@@ -73,5 +82,7 @@ namespace ObstacleDodge
         }
 
         public void SetBannerVisible(bool visible) { }
+        public bool PrivacyOptionsRequired => false;
+        public void ShowPrivacyOptions() { }
     }
 }

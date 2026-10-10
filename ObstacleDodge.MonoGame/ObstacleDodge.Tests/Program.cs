@@ -16,6 +16,8 @@ namespace ObstacleDodge.Tests
         public void ShowRewarded(Action onRewarded, Action onFailed) { Rewarded++; (RewardWorks ? onRewarded : onFailed)(); }
         public void ShowInterstitial(Action onClosed) { Interstitials++; onClosed(); }
         public void SetBannerVisible(bool visible) { }
+        public bool PrivacyOptionsRequired => false;
+        public void ShowPrivacyOptions() { }
     }
 
     static class Program
@@ -55,6 +57,10 @@ namespace ObstacleDodge.Tests
         {
             Console.WriteLine("Game loop (ads guide, Part 2)");
             var (gm, ads, _) = NewGame();
+            var adManager = AdManager.Instance;
+            adManager.MinSecondsBetweenInterstitials = 1000; // the Game Over ad must ignore this
+            void Frame(float dt) { adManager.Update(); gm.Tick(dt); adManager.Update(); }
+
             gm.StartGame();
             Check(gm.State == GameState.Playing && gm.Hits == 0, "starts playing with 0 hits");
             for (int i = 0; i < 4; i++) gm.RegisterHit();
@@ -64,28 +70,44 @@ namespace ObstacleDodge.Tests
             gm.RegisterHit();
             Check(gm.Hits == 5, "hits are not counted after Game Over");
 
+            Check(gm.GameOverAdPending && ads.Interstitials == 0, "Game Over: the ad is waiting (short pause first)");
+            gm.Restart();
+            Check(gm.State == GameState.GameOver, "buttons do nothing until the Game Over ad was shown");
+            Frame(0.5f);
+            Check(ads.Interstitials == 0, "no ad during the first 0.5 s");
+            Frame(0.6f);
+            Check(ads.Interstitials == 1 && !gm.GameOverAdPending, "interstitial after Game Over (lives gone #1)");
+
             AdManager.Instance.ShowRewarded(gm.ContinueAfterReward);
             AdManager.Instance.Update();
             Check(gm.State == GameState.Playing && gm.Hits == 2 && gm.LivesLeft == 3, "rewarded ad: +3 lives (hits 2 / 5)");
             Check(!gm.CanContinue, "continue only once per round");
 
-            ads.RewardWorks = false;
             for (int i = 0; i < 3; i++) gm.RegisterHit();
             Check(gm.State == GameState.GameOver, "Game Over again");
+            Frame(1.1f);
+            Check(ads.Interstitials == 2, "interstitial again after every Game Over (even right after another ad)");
 
-            gm.Restart(); // round 1
-            gm.Restart(); // round 2
-            Check(ads.Interstitials == 0, "no interstitial on restart 1 and 2");
-            gm.Restart(); // round 3
-            AdManager.Instance.Update();
-            Check(ads.Interstitials == 1, "interstitial on every 3rd restart");
+            gm.Restart();
+            Frame(0.1f);
             Check(gm.State == GameState.Playing && gm.CanContinue && gm.Hits == 0, "restart resets hits and the continue");
+            Check(ads.Interstitials == 2, "'Qayta o'ynash' itself shows no extra ad");
 
-            gm.CompleteLevel();
-            Check(gm.State == GameState.LevelComplete && gm.LastStars == 3, "finish without hits = 3 stars");
-            Check(gm.Save.Level == 2 && gm.Save.BestLevel == 1, "progress saved (level 2 unlocked)");
-            gm.NextLevel();
-            Check(gm.Level == 2 && gm.State == GameState.Playing, "next level starts");
+            adManager.MinSecondsBetweenInterstitials = 0;
+            int before = ads.Interstitials;
+            for (int level = 0; level < 3; level++)
+            {
+                gm.CompleteLevel();
+                if (level == 0)
+                {
+                    Check(gm.State == GameState.LevelComplete && gm.LastStars == 3, "finish without hits = 3 stars");
+                    Check(gm.Save.Level == 2 && gm.Save.BestLevel == 1, "progress saved (level 2 unlocked)");
+                }
+                gm.NextLevel();
+                adManager.Update();
+            }
+            Check(gm.Level == 4 && gm.State == GameState.Playing, "next level starts");
+            Check(ads.Interstitials == before + 1, "one interstitial per 3 finished levels");
         }
 
         static void ObjectHitCountsOnce()

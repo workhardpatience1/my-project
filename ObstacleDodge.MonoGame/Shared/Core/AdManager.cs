@@ -66,12 +66,13 @@ namespace ObstacleDodge
 
         /// <summary>
         /// Shows an interstitial between rounds. If one was shown less than
-        /// <see cref="MinSecondsBetweenInterstitials"/> ago, or none is loaded, the game just goes on.
+        /// <see cref="MinSecondsBetweenInterstitials"/> ago (unless <paramref name="ignoreCooldown"/>),
+        /// or none is loaded, the game just goes on.
         /// </summary>
-        public void ShowInterstitial(Action onDone)
+        public void ShowInterstitial(Action onDone, bool ignoreCooldown = false)
         {
             double now = clock.Elapsed.TotalSeconds;
-            bool tooSoon = now - lastInterstitialTime < MinSecondsBetweenInterstitials;
+            bool tooSoon = !ignoreCooldown && now - lastInterstitialTime < MinSecondsBetweenInterstitials;
             bool ready;
             try { ready = provider.IsInterstitialReady; } catch { ready = false; }
             if (tooSoon || !ready || IsShowingAd) { onDone?.Invoke(); return; }
@@ -92,6 +93,16 @@ namespace ObstacleDodge
         public void SetBannerVisible(bool visible)
         {
             try { provider.SetBannerVisible(visible); } catch { }
+        }
+
+        public bool PrivacyOptionsRequired
+        {
+            get { try { return provider.PrivacyOptionsRequired; } catch { return false; } }
+        }
+
+        public void ShowPrivacyOptions()
+        {
+            try { provider.ShowPrivacyOptions(); } catch (Exception e) { Console.WriteLine("[Ads] Privacy options: " + e.Message); }
         }
 
         /// <summary>Runs the ad callbacks on the game thread. Called once per frame from Game.Update.</summary>

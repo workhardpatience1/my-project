@@ -8,8 +8,8 @@
     <!-- Change these before publishing (the package name must match the one in AdMob / Google Play). -->
     <ApplicationId>com.workhardpatience.obstacledodge</ApplicationId>
     <ApplicationTitle>Obstacle Dodge</ApplicationTitle>
-    <ApplicationVersion>2</ApplicationVersion>
-    <ApplicationDisplayVersion>1.0.1</ApplicationDisplayVersion>
+    <ApplicationVersion>3</ApplicationVersion>
+    <ApplicationDisplayVersion>1.1.0</ApplicationDisplayVersion>
 
     <!-- APK to install directly on a phone. For Google Play build with -p:AndroidPackageFormat=aab -->
     <AndroidPackageFormat>apk</AndroidPackageFormat>
@@ -41,5 +41,7 @@
   <ItemGroup>
     <PackageReference Include="MonoGame.Framework.Android" Version="3.8.5.1" />
     <PackageReference Include="Xamarin.GooglePlayServices.Ads" Version="125.5.0" Condition="'$(UseAdMob)' == 'true'" />
+    <!-- Google's consent tool (GDPR): asks EU/UK users before personalised ads -->
+    <PackageReference Include="Xamarin.Google.UserMessagingPlatform" Version="4.0.0.4" Condition="'$(UseAdMob)' == 'true'" />
   </ItemGroup>
 </Project>

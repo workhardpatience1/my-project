@@ -29,5 +29,13 @@ namespace ObstacleDodge
         public const string NewBest = "Yangi rekord!";
         public const string AdShowing = "Reklama...";
         public const string Finish = "MARRA";
+        public const string AdLoading = "Reklama yuklanmoqda...";
+        public const string RewardNotEarned = "Reklama oxirigacha ko'rilmadi — jon berilmadi";
+        public const string RewardEarned = "+{0} jon! Davom eting";
+        public const string Privacy = "Maxfiylik siyosati";
+        public const string AdSettings = "Reklama sozlamalari";
+
+        /// <summary>The privacy policy page (Google Play and AdMob require one for apps with ads).</summary>
+        public const string PrivacyUrl = "https://github.com/workhardpatience1/my-project/blob/claude/relaxed-ramanujan-of9bf0/PRIVACY.md";
     }
 }

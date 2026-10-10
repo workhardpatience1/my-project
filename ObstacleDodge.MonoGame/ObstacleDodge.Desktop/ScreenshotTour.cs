@@ -47,6 +47,7 @@ namespace ObstacleDodge
             var log = new List<string>();
             bool sizeApplied = false;
             GameState lastState = GameState.Menu;
+            bool shotPending = false;
 
             void Next() { step++; stepTime = 0f; }
             void Log(string s) { Console.WriteLine("[Tour] " + s); log.Add(s); }
@@ -76,7 +77,12 @@ namespace ObstacleDodge
                         break;
                     case 3:
                         // keep running forward; obstacles will be hit until Game Over (or the finish)
-                        if (gm.State == GameState.GameOver && stepTime > 0.3f) { pendingShot = "03_gameover"; Next(); }
+                        if (gm.State == GameState.GameOver && gm.GameOverAdPending && stepTime > 0.3f && !shotPending)
+                        {
+                            pendingShot = "03a_gameover_before_ad"; // title only: the ad comes first
+                            shotPending = true;
+                        }
+                        else if (gm.State == GameState.GameOver && !gm.GameOverAdPending) { pendingShot = "03_gameover"; Next(); }
                         else if (gm.State == GameState.LevelComplete) { Log("finished before game over"); step = 6; }
                         else if (stepTime > 40f) { Log("TIMEOUT waiting for game over"); step = 6; }
                         break;

@@ -7,6 +7,7 @@ using Google.Android.Gms.Ads;
 using Google.Android.Gms.Ads.Initialization;
 using Google.Android.Gms.Ads.Interstitial;
 using Google.Android.Gms.Ads.Rewarded;
+using Xamarin.Google.UserMesssagingPlatform; // (sic: the binding's namespace has three "s")
 
 namespace ObstacleDodge
 {
@@ -14,7 +15,8 @@ namespace ObstacleDodge
     /// Google AdMob for the Android version: banner (always at the bottom), interstitial
     /// (between rounds) and rewarded (the "Reklama ko'rish: +3 jon" button).
     /// It does the same job as the LevelPlay part of AdManager.cs in the ads guide (Part 3 and 5).
-    /// All AdMob calls run on the Android UI thread.
+    /// Before any ad, Google's consent tool (UMP) asks for consent where the law needs it
+    /// (EU/UK, guide Part 11.2); everywhere else it does nothing. All calls run on the UI thread.
     /// </summary>
     public sealed class AdMobAds : IAdsProvider
     {
@@ -22,7 +24,9 @@ namespace ObstacleDodge
         AdView banner;
         volatile InterstitialAd interstitial;
         volatile RewardedAd rewarded;
-        bool loadingInterstitial, loadingRewarded, initialized;
+        bool loadingInterstitial, loadingRewarded, initialized, adsStarted;
+        IConsentInformation consent;
+        volatile bool privacyOptionsRequired; // read every frame by the menu, updated on the UI thread
         int interstitialRetry, rewardedRetry;
 
         public AdMobAds(Activity activity) { this.activity = activity; }
@@ -39,14 +43,96 @@ namespace ObstacleDodge
         {
             activity.RunOnUiThread(() =>
             {
-                try
-                {
-                    MobileAds.Initialize(activity, new InitListener(OnInitialized));
-                }
+                try { RequestConsentThenStart(); }
                 catch (Exception e)
                 {
-                    Console.WriteLine("[Ads] Init failed: " + e.Message);
+                    Console.WriteLine("[Ads] Consent tool failed: " + e.Message);
+                    StartAds();
                 }
+            });
+        }
+
+        // ---------------------------------------------------------------- consent (UMP)
+
+        void RequestConsentThenStart()
+        {
+            consent = UserMessagingPlatform.GetConsentInformation(activity);
+            var parameters = new ConsentRequestParameters.Builder().Build();
+            consent.RequestConsentInfoUpdate(activity, parameters,
+                new ConsentUpdated(() =>
+                {
+                    try
+                    {
+                        // shows the form only if the user is in a region that needs it and has not answered yet
+                        UserMessagingPlatform.LoadAndShowConsentFormIfRequired(activity, new ConsentFormDismissed(error =>
+                        {
+                            if (error != null) Console.WriteLine("[Ads] Consent form: " + error.Message);
+                            StartAdsIfAllowed();
+                        }));
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine("[Ads] Consent form failed: " + e.Message);
+                        StartAdsIfAllowed();
+                    }
+                }),
+                new ConsentUpdateFailed(error =>
+                {
+                    Console.WriteLine("[Ads] Consent update failed: " + error?.Message);
+                    StartAdsIfAllowed();
+                }));
+
+            // consent from the last launch is still valid: start loading ads right away
+            UpdatePrivacyFlag();
+            if (consent.CanRequestAds()) StartAds();
+        }
+
+        void StartAdsIfAllowed()
+        {
+            UpdatePrivacyFlag();
+            bool allowed;
+            try { allowed = consent == null || consent.CanRequestAds(); } catch { allowed = true; }
+            if (allowed) StartAds();
+        }
+
+        void StartAds()
+        {
+            if (adsStarted) return;
+            adsStarted = true;
+            try
+            {
+                MobileAds.Initialize(activity, new InitListener(OnInitialized));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("[Ads] Init failed: " + e.Message);
+            }
+        }
+
+        public bool PrivacyOptionsRequired => privacyOptionsRequired;
+
+        void UpdatePrivacyFlag()
+        {
+            try
+            {
+                var status = consent?.PrivacyOptionsRequirementStatus;
+                privacyOptionsRequired = status != null && status.Equals(ConsentInformationPrivacyOptionsRequirementStatus.Required);
+            }
+            catch { privacyOptionsRequired = false; }
+        }
+
+        public void ShowPrivacyOptions()
+        {
+            activity.RunOnUiThread(() =>
+            {
+                try
+                {
+                    UserMessagingPlatform.ShowPrivacyOptionsForm(activity, new ConsentFormDismissed(error =>
+                    {
+                        if (error != null) Console.WriteLine("[Ads] Privacy options: " + error.Message);
+                    }));
+                }
+                catch (Exception e) { Console.WriteLine("[Ads] Privacy options failed: " + e.Message); }
             });
         }
 
@@ -206,6 +292,27 @@ namespace ObstacleDodge
             readonly Action done;
             public InitListener(Action done) { this.done = done; }
             public void OnInitializationComplete(IInitializationStatus status) => done();
+        }
+
+        sealed class ConsentUpdated : Java.Lang.Object, IConsentInformationOnConsentInfoUpdateSuccessListener
+        {
+            readonly Action done;
+            public ConsentUpdated(Action done) { this.done = done; }
+            public void OnConsentInfoUpdateSuccess() => done();
+        }
+
+        sealed class ConsentUpdateFailed : Java.Lang.Object, IConsentInformationOnConsentInfoUpdateFailureListener
+        {
+            readonly Action<FormError> failed;
+            public ConsentUpdateFailed(Action<FormError> failed) { this.failed = failed; }
+            public void OnConsentInfoUpdateFailure(FormError error) => failed(error);
+        }
+
+        sealed class ConsentFormDismissed : Java.Lang.Object, IConsentFormOnConsentFormDismissedListener
+        {
+            readonly Action<FormError> dismissed;
+            public ConsentFormDismissed(Action<FormError> dismissed) { this.dismissed = dismissed; }
+            public void OnConsentFormDismissed(FormError error) => dismissed(error);
         }
 
         sealed class InterstitialLoad : InterstitialAdLoadCallback

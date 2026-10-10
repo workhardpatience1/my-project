@@ -6,8 +6,9 @@ namespace ObstacleDodge
 
     /// <summary>
     /// The game loop from the ads guide (Part 2.3): hit counter, Game Over,
-    /// "continue after a rewarded ad" and restart (with an interstitial on every N-th round).
-    /// On top of the guide it knows about levels and the finish line.
+    /// "continue after a rewarded ad" and restart. On top of the guide it knows about levels and
+    /// the finish line. Ads: an interstitial after EVERY Game Over (all lives are gone),
+    /// and one before every N-th next level.
     /// </summary>
     public sealed class GameManager
     {
@@ -15,10 +16,19 @@ namespace ObstacleDodge
 
         public int MaxHits { get; set; } = 5;
         public int ContinueBonusLives { get; set; } = 3;
-        public int InterstitialEveryNRounds { get; set; } = 3;
 
-        // static: like in the guide, the value is not reset when a level is reloaded.
-        static int restartCounter;
+        /// <summary>Show an interstitial every time all lives are gone (Game Over).</summary>
+        public bool AdOnGameOver { get; set; } = true;
+        /// <summary>Seconds between the last hit and that ad, so the player sees what happened.</summary>
+        public float GameOverAdDelay { get; set; } = 1.0f;
+        /// <summary>An interstitial before every N-th "next level" (0 = never).</summary>
+        public int InterstitialEveryNLevels { get; set; } = 3;
+
+        // static: like the guide's restartCounter, it is not reset when a level is reloaded.
+        static int levelsCompleted;
+
+        float gameOverAdTimer = -1f;
+        bool waitingForGameOverAd;
 
         int hits;
         bool continueUsed;
@@ -29,6 +39,9 @@ namespace ObstacleDodge
         public int BonusLives => ContinueBonusLives;
         public bool IsGameOver => State == GameState.GameOver;
         public bool CanContinue => !continueUsed;
+
+        /// <summary>True from the Game Over moment until its ad has closed: the buttons wait.</summary>
+        public bool GameOverAdPending => gameOverAdTimer >= 0f || waitingForGameOverAd;
 
         public GameState State { get; private set; } = GameState.Menu;
         public int Level { get; private set; } = 1;
@@ -51,7 +64,7 @@ namespace ObstacleDodge
             Instance = this;
         }
 
-        public static void ResetRoundCounterForTests() => restartCounter = 0;
+        public static void ResetRoundCounterForTests() => levelsCompleted = 0;
 
         public void SelectLevel(int level)
         {
@@ -65,14 +78,22 @@ namespace ObstacleDodge
         {
             hits = 0;
             continueUsed = false;
+            gameOverAdTimer = -1f;
+            waitingForGameOverAd = false;
             RoundTime = 0f;
             loadLevel?.Invoke(Level);
             SetState(GameState.Playing);
         }
 
+        /// <summary>Called every frame (also outside of play, for the Game Over ad timer).</summary>
         public void Tick(float dt)
         {
             if (State == GameState.Playing) RoundTime += dt;
+            if (gameOverAdTimer >= 0f)
+            {
+                gameOverAdTimer -= dt;
+                if (gameOverAdTimer < 0f) ShowGameOverAd();
+            }
         }
 
         /// <summary>Called by an obstacle the first time the player touches it (ObjectHit).</summary>
@@ -88,12 +109,23 @@ namespace ObstacleDodge
         void EndGame()
         {
             SetState(GameState.GameOver);
+            if (AdOnGameOver && AdManager.Instance != null)
+                gameOverAdTimer = Math.Max(0f, GameOverAdDelay);
+        }
+
+        void ShowGameOverAd()
+        {
+            gameOverAdTimer = -1f;
+            if (State != GameState.GameOver || AdManager.Instance == null) return;
+            waitingForGameOverAd = true;
+            // every Game Over gets its ad, even if another ad was shown a moment ago
+            AdManager.Instance.ShowInterstitial(() => waitingForGameOverAd = false, ignoreCooldown: true);
         }
 
         /// <summary>After a rewarded ad: the player keeps exactly ContinueBonusLives lives (one time per round).</summary>
         public void ContinueAfterReward()
         {
-            if (State != GameState.GameOver) return;
+            if (State != GameState.GameOver || GameOverAdPending) return;
             continueUsed = true;
             hits = Math.Max(0, MaxHits - ContinueBonusLives);
             SetState(GameState.Playing);
@@ -112,24 +144,24 @@ namespace ObstacleDodge
             SetState(GameState.LevelComplete);
         }
 
-        /// <summary>"Qayta o'ynash": restarts the level; every N-th round an interstitial is shown first.</summary>
-        public void Restart() => AfterRound(BeginLevel);
-
-        /// <summary>"Keyingi daraja".</summary>
-        public void NextLevel()
+        /// <summary>"Qayta o'ynash": restarts the level (the Game Over ad was already shown).</summary>
+        public void Restart()
         {
-            Level++;
-            AfterRound(BeginLevel);
+            if (GameOverAdPending) return;
+            BeginLevel();
         }
 
-        void AfterRound(Action then)
+        /// <summary>"Keyingi daraja": every N-th time an interstitial is shown first.</summary>
+        public void NextLevel()
         {
-            restartCounter++;
-            bool showAd = InterstitialEveryNRounds > 0 && restartCounter % InterstitialEveryNRounds == 0;
+            if (State != GameState.LevelComplete) return;
+            Level++;
+            levelsCompleted++;
+            bool showAd = InterstitialEveryNLevels > 0 && levelsCompleted % InterstitialEveryNLevels == 0;
             if (showAd && AdManager.Instance != null)
-                AdManager.Instance.ShowInterstitial(then);
+                AdManager.Instance.ShowInterstitial(BeginLevel);
             else
-                then();
+                BeginLevel();
         }
 
         public void Pause()
@@ -144,6 +176,7 @@ namespace ObstacleDodge
 
         public void GoToMenu()
         {
+            if (GameOverAdPending) return;
             Level = Math.Clamp(Level, 1, Math.Max(1, Save.Level));
             SetState(GameState.Menu);
         }

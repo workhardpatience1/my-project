@@ -1,17 +1,23 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-// Ads guide, Part 2.3: hit counter, Game Over, "continue after a rewarded ad" and restart
-// (an interstitial on every N-th restart). Added: levels, the finish line and saved progress.
+// Ads guide, Part 2.3: hit counter, Game Over, "continue after a rewarded ad" and restart.
+// Added: levels, the finish line and saved progress.
+// Ads: an interstitial after EVERY Game Over (all lives are gone), shown a moment after the last
+// hit; the Game Over buttons appear only after it. Plus one before every N-th next level.
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
 
     [SerializeField] int maxHits = 5;
     [SerializeField] int continueBonusLives = 3;
-    [SerializeField] int interstitialEveryNRestarts = 3;
+    [SerializeField] bool adOnGameOver = true;
+    [SerializeField] float gameOverAdDelay = 1f;
+    [SerializeField] int interstitialEveryNLevels = 3;
 
-    static int restartCounter = 0;
+    static int levelsCompleted = 0;
+    float gameOverAdTimer = -1f;
+    bool waitingForGameOverAd = false;
 
     // The level survives scene reloads (static) and app restarts (PlayerPrefs).
     const string LevelKey = "od_level";
@@ -35,6 +41,7 @@ public class GameManager : MonoBehaviour
     public int BestLevel => PlayerPrefs.GetInt(BestKey, 0);
     public float RoundTime => roundTime;
     public int Stars => stars;
+    public bool GameOverAdPending => gameOverAdTimer >= 0f || waitingForGameOverAd;
 
     void Awake()
     {
@@ -46,6 +53,21 @@ public class GameManager : MonoBehaviour
     void Update()
     {
         if (!isGameOver && !levelComplete) roundTime += Time.deltaTime;
+
+        // Time.timeScale is 0 during Game Over, so this timer uses the real (unscaled) time
+        if (gameOverAdTimer >= 0f)
+        {
+            gameOverAdTimer -= Time.unscaledDeltaTime;
+            if (gameOverAdTimer < 0f) ShowGameOverAd();
+        }
+    }
+
+    void ShowGameOverAd()
+    {
+        gameOverAdTimer = -1f;
+        if (!isGameOver || AdManager.Instance == null) return;
+        waitingForGameOverAd = true;
+        AdManager.Instance.ShowInterstitial(() => waitingForGameOverAd = false);
     }
 
     public void RegisterHit()
@@ -60,10 +82,12 @@ public class GameManager : MonoBehaviour
     {
         isGameOver = true;
         Time.timeScale = 0f;
+        if (adOnGameOver && AdManager.Instance != null) gameOverAdTimer = gameOverAdDelay;
     }
 
     public void ContinueAfterReward()
     {
+        if (!isGameOver || GameOverAdPending) return;
         continueUsed = true;
         hits = Mathf.Max(0, maxHits - continueBonusLives);
         isGameOver = false;
@@ -85,17 +109,19 @@ public class GameManager : MonoBehaviour
     public void NextLevel()
     {
         currentLevel++;
-        Restart();
-    }
-
-    public void Restart()
-    {
-        restartCounter++;
-        bool showAd = restartCounter % interstitialEveryNRestarts == 0;
+        levelsCompleted++;
+        bool showAd = interstitialEveryNLevels > 0 && levelsCompleted % interstitialEveryNLevels == 0;
         if (showAd && AdManager.Instance != null)
             AdManager.Instance.ShowInterstitial(ReloadScene);
         else
             ReloadScene();
+    }
+
+    // "Qayta o'ynash": the Game Over ad was already shown, so no extra ad here.
+    public void Restart()
+    {
+        if (GameOverAdPending) return;
+        ReloadScene();
     }
 
     void ReloadScene()

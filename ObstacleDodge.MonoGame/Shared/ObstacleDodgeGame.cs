@@ -173,7 +173,6 @@ namespace ObstacleDodge
                     if (!ads.IsShowingAd)
                     {
                         world.Update(dt, ReadMove(), true);
-                        gm.Tick(dt);
                         camera.Follow(world, dt);
                     }
                     break;
@@ -188,6 +187,7 @@ namespace ObstacleDodge
                     break;
                     // Paused and GameOver: time stands still (Time.timeScale = 0 in the guide)
             }
+            if (!ads.IsShowingAd) gm.Tick(dt); // round time + the Game Over ad timer
 
             AfterUpdate?.Invoke(dt);
         }
@@ -294,6 +294,7 @@ namespace ObstacleDodge
                     if (!ads.IsShowingAd) gameUI.DrawLevelComplete(batch, gm);
                     break;
             }
+            gameUI.DrawNotice(batch);
             if (ads.IsShowingAd) gameUI.DrawAdOverlay(batch);
             batch.End();
         }

@@ -50,16 +50,36 @@ public class GameUI : MonoBehaviour
 
         if (!gm.IsGameOver) return;
 
+        if (gm.GameOverAdPending)
+        {
+            // all lives are gone: the ad comes first, the buttons appear after it
+            GUI.Box(new Rect(x - 30, 130, bw + 60, 130), "");
+            GUI.Label(new Rect(x, 150, bw, 60), "O'YIN TUGADI", labelStyle);
+            GUI.Label(new Rect(x, 205, bw, 40), "Reklama...", smallStyle);
+            return;
+        }
+
         GUI.Box(new Rect(x - 30, 130, bw + 60, 430), "");
         GUI.Label(new Rect(x, 150, bw, 60), "O'YIN TUGADI", labelStyle);
 
         float y = 240f;
         AdManager ads = AdManager.Instance;
-        if (gm.CanContinue && ads != null && ads.IsRewardedReady())
+        if (gm.CanContinue && ads != null)
         {
-            string text = "Reklama ko'rish: +" + gm.BonusLives + " jon";
-            if (GUI.Button(new Rect(x, y, bw, bh), text, buttonStyle))
-                ads.ShowRewarded(gm.ContinueAfterReward);
+            if (ads.IsRewardedReady())
+            {
+                string text = "Reklama ko'rish: +" + gm.BonusLives + " jon";
+                if (GUI.Button(new Rect(x, y, bw, bh), text, buttonStyle))
+                    ads.ShowRewarded(gm.ContinueAfterReward);
+            }
+            else
+            {
+                // the button is always there; while the ad loads it is grey
+                bool wasEnabled = GUI.enabled;
+                GUI.enabled = false;
+                GUI.Button(new Rect(x, y, bw, bh), "Reklama yuklanmoqda...", buttonStyle);
+                GUI.enabled = wasEnabled;
+            }
             y += bh + 20f;
         }
 
