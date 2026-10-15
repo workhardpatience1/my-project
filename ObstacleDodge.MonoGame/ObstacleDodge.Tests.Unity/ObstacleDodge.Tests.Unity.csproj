@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    The same logic tests, but built from the Unity copy of the game code (ObstacleDodge.Unity/Assets/Scripts/Shared)
+    and the small XNA math replacement used in Unity (XnaShim) — without MonoGame.
+    If these pass, the Unity version plays exactly like the phone version.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <RollForward>Major</RollForward>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../ObstacleDodge.Tests/Program.cs" Link="Program.cs" />
+    <Compile Include="../../ObstacleDodge.Unity/Assets/Scripts/Shared/*.cs" Link="Shared/%(Filename)%(Extension)" />
+    <Compile Include="../../ObstacleDodge.Unity/Assets/Scripts/XnaShim/*.cs" Link="XnaShim/%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

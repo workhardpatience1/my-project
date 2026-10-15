@@ -51,6 +51,11 @@ jobs:
       - name: Logic tests (game loop, hits, ads flow, every level can be finished)
         run: dotnet run -c Release --project ObstacleDodge.MonoGame/ObstacleDodge.Tests
 
+      - name: Unity uses the same game code (sync check + the same tests on the Unity copy)
+        run: |
+          python3 tools/sync_unity_shared.py --check
+          dotnet run -c Release --project ObstacleDodge.MonoGame/ObstacleDodge.Tests.Unity
+
       - name: Build the APK (with AdMob)
         run: |
           dotnet publish ObstacleDodge.MonoGame/ObstacleDodge.Android/ObstacleDodge.Android.csproj \

@@ -112,25 +112,21 @@ dotnet publish ObstacleDodge.Android -c Release -p:AndroidPackageFormat=aab \
 > **Google Play uchun** oʻzingizning yopiq kalitingizni yarating va uni hech qachon repozitoriyga qoʻymang:
 > `keytool -genkeypair -keystore release.keystore -alias obstacledodge -keyalg RSA -keysize 2048 -validity 10000`
 
-### 2) `ObstacleDodge.Unity/` — qoʻllanmadagi Unity 6 loyihasi (C#)
+### 2) `ObstacleDodge.Unity/` — Unity 6 loyihasi (telefondagi oʻyinning aynan oʻzi)
 
-Qoʻllanmadagi barcha skriptlar `Assets/Scripts/` da: `Mover`, `Scorer`, `ObjectHit`, `Spinner`, `Dropper`,
-`FlyAtPlayer`, `TriggerProjectile`, `GameManager`, `GameUI`, `AdManager`, `TouchControls`
-(+ `LevelBuilder`, `FollowCamera`, `FinishLine`, `SlidingWall`). WebGL uchun `Plugins/WebGL/WebAds.jslib`
-va `WebGLTemplates/ObstacleDodge/index.html` (Monetag + Adsterra joylari).
-
-* **Yuklab olish (faqat Unity loyihasi):** [ObstacleDodge-Unity.zip](https://github.com/workhardpatience1/my-project/releases/download/latest-apk/ObstacleDodge-Unity.zip)
-* **Ochish:** Unity Hub → *Add project from disk* → `ObstacleDodge.Unity` papkasi (Unity **6000.0.x** yoki yangiroq). ▶ Play bosing.
-  Daraja sahnaga qoʻlda emas, `LevelBuilder.cs` orqali **kod bilan** quriladi (qoʻllanmadagi Part 3–6 ning aynan oʻzi).
-* **“Hit” tegi** va tavsiya etilgan sozlamalar (paket nomi, landshaft, IL2CPP + ARM64, minSdk 24) loyiha
-  ochilganda avtomatik qoʻyiladi (`Editor/ProjectSetup.cs`). Menyu: **Obstacle Dodge → Apply recommended settings**.
+* **Yuklab olish:** [ObstacleDodge-Unity.zip](https://github.com/workhardpatience1/my-project/releases/download/latest-apk/ObstacleDodge-Unity.zip)
+* **Ochish:** Unity Hub → *Add project from disk* → `ObstacleDodge.Unity` (Unity 6000.0.x yoki yangiroq) →
+  `Assets/Scenes/SampleScene` → ▶ Play. Sahna boʻsh: oʻyin oʻzi yaratiladi (`GameBoot`).
+* **Telefondagi bilan bir xil:** oʻyin qoidalari (darajalar, toʻqnashuvlar, jonlar, reklama qoidalari) Unity'da
+  **aynan oʻsha kod** — `Assets/Scripts/Shared/` papkasi `ObstacleDodge.MonoGame/Shared` dan
+  `tools/sync_unity_shared.py` bilan nusxalanadi va 30 ta test Unity nusxasida ham ishlaydi.
+  Unity faqat chizadi (`Scripts/Unity/WorldView.cs`), menyu/tugmalar (`GameUI.cs`, oʻsha shrift va ranglar),
+  ovoz va boshqaruvni bajaradi.
+* **Reklama:** Unity muharririda haqiqiy reklama oʻrniga **“REKLAMA (TEST)”** oynasi va pastda test banner chiqadi —
+  har Game Over'da, har 3-chi keyingi darajada va “+3 jon” tugmasida. Android'da haqiqiy reklama uchun:
+  *Window → Package Manager → Unity LevelPlay* ni oʻrnating va kalitlarni `Scripts/Unity/AdKeys.cs` ga yozing.
+  WebGL: Monetag (`Plugins/WebGL/WebAds.jslib`) + Adsterra (`WebGLTemplates/ObstacleDodge/index.html`).
 * **APK:** menyu **Obstacle Dodge → Build Android APK** → `Builds/Android/ObstacleDodge.apk`.
-* **LevelPlay reklamasi (qoʻllanma, Part 5):** *Window → Package Manager → Unity LevelPlay* ni oʻrnating —
-  `LEVELPLAY_INSTALLED` belgisi avtomatik qoʻshiladi va `AdManager` haqiqiy SDK dan foydalanadi.
-  LevelPlay saytidagi App Key va 3 ta Ad Unit ID ni sahnadagi **AdManager** obyektiga yoki `AdManager.cs` dagi
-  maydonlarga yozing. Paket oʻrnatilmagan boʻlsa ham loyiha xatosiz yigʻiladi (reklama oʻrniga “stub”).
-* **Reklama qoidasi** APK bilan bir xil: har Game Over'da interstitial (`GameManager.cs`, `adOnGameOver`),
-  har 3-chi keyingi darajada yana bitta; “+3 jon” tugmasi reklama yuklanguncha kulrang turadi.
 * **Bulutda yigʻish (ixtiyoriy):** `.github/workflows/unity-build.yml` — `UNITY_EMAIL`, `UNITY_PASSWORD`,
   `UNITY_LICENSE` secret larini qoʻshing va *Actions → Unity build → Run workflow* bosing.
 
